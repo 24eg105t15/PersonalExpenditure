@@ -1,0 +1,215 @@
+{
+  "info": {
+    "_postman_id": "7fa6d482-95b7-4c7b-bda8-89c2567dfaa1",
+    "name": "SpendWise - Personal Expense Tracker API",
+    "description": "Collection of all REST API endpoints for SpendWise full-stack application.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8085/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Jane Developer\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"Jane@123\",\n  \"confirmPassword\": \"Jane@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Login (Demo Account)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@spendwise.com\",\n  \"password\": \"Demo@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Dashboard",
+      "item": [
+        {
+          "name": "Get Summary (Current Month)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/dashboard/summary?period=current_month", "host": ["{{baseUrl}}"], "path": ["dashboard", "summary"], "query": [{ "key": "period", "value": "current_month" }] }
+          }
+        },
+        {
+          "name": "Get Cash Flow Trends",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/dashboard/cash-flow?months=6", "host": ["{{baseUrl}}"], "path": ["dashboard", "cash-flow"], "query": [{ "key": "months", "value": "6" }] }
+          }
+        },
+        {
+          "name": "Get Category Breakdown",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/dashboard/category-breakdown?type=EXPENSE", "host": ["{{baseUrl}}"], "path": ["dashboard", "category-breakdown"], "query": [{ "key": "type", "value": "EXPENSE" }] }
+          }
+        },
+        {
+          "name": "Get Recent Transactions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/dashboard/recent-transactions", "host": ["{{baseUrl}}"], "path": ["dashboard", "recent-transactions"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Transactions",
+      "item": [
+        {
+          "name": "Get Filtered Transactions (Paged)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/transactions?page=0&size=10&sortBy=transactionDate&sortDir=desc", "host": ["{{baseUrl}}"], "path": ["transactions"], "query": [{ "key": "page", "value": "0" }, { "key": "size", "value": "10" }, { "key": "sortBy", "value": "transactionDate" }, { "key": "sortDir", "value": "desc" }] }
+          }
+        },
+        {
+          "name": "Create Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"EXPENSE\",\n  \"amount\": 3450.00,\n  \"description\": \"Weekly Grocery Market\",\n  \"categoryId\": 2,\n  \"transactionDate\": \"2026-10-12\",\n  \"paymentMethod\": \"UPI\",\n  \"notes\": \"Organic farm purchase\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/transactions", "host": ["{{baseUrl}}"], "path": ["transactions"] }
+          }
+        },
+        {
+          "name": "Export Transactions to CSV",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/transactions/export/csv", "host": ["{{baseUrl}}"], "path": ["transactions", "export", "csv"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Budgets",
+      "item": [
+        {
+          "name": "Get Monthly Budget Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/budgets/summary?month=10&year=2026", "host": ["{{baseUrl}}"], "path": ["budgets", "summary"], "query": [{ "key": "month", "value": "10" }, { "key": "year", "value": "2026" }] }
+          }
+        },
+        {
+          "name": "Create Category Budget",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": 1,\n  \"amount\": 7500.00,\n  \"month\": 10,\n  \"year\": 2026,\n  \"warningThreshold\": 80\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/budgets", "host": ["{{baseUrl}}"], "path": ["budgets"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Savings Goals",
+      "item": [
+        {
+          "name": "List All Goals",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/savings-goals", "host": ["{{baseUrl}}"], "path": ["savings-goals"] }
+          }
+        },
+        {
+          "name": "Record Contribution Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CONTRIBUTION\",\n  \"amount\": 15000.00,\n  \"notes\": \"Diwali bonus allocation\",\n  \"entryDate\": \"2026-10-12\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/savings-goals/1/entries", "host": ["{{baseUrl}}"], "path": ["savings-goals", "1", "entries"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Reports",
+      "item": [
+        {
+          "name": "Get Monthly Report",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/reports/monthly?month=10&year=2026", "host": ["{{baseUrl}}"], "path": ["reports", "monthly"], "query": [{ "key": "month", "value": "10" }, { "key": "year", "value": "2026" }] }
+          }
+        }
+      ]
+    }
+  ]
+}

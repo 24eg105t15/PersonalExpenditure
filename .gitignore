@@ -1,0 +1,23 @@
+# Directories
+node_modules/
+target/
+dist/
+build/
+local-mysql-data/
+*.log
+
+# IDE and Editor files
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
