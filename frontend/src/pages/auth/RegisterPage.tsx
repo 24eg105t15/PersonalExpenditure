@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Wallet, Eye, EyeOff, Lock, Mail, User, ShieldCheck } from 'lucide-react';
+import { Wallet, Eye, EyeOff, Lock, Mail, User, ShieldCheck, AlertCircle, Sparkles } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useAuth } from '../../context/AuthContext';
@@ -11,12 +11,12 @@ import toast from 'react-hot-toast';
 
 const registerSchema = z
   .object({
-    fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
-    email: z.string().email('Please enter a valid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    fullName: z.string().trim().min(2, 'Full name must be at least 2 characters').max(100, 'Full name cannot exceed 100 characters'),
+    email: z.string().trim().email('Please enter a valid email address'),
+    password: z.string().min(6, 'Password must be at least 6 characters').max(50, 'Password cannot exceed 50 characters'),
     confirmPassword: z.string().min(1, 'Confirm your password'),
-    terms: z.literal(true, {
-      errorMap: () => ({ message: 'You must accept the terms of service' }),
+    terms: z.boolean().refine((val) => val === true, {
+      message: 'You must accept the terms of service',
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -29,12 +29,14 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export const RegisterPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -48,17 +50,50 @@ export const RegisterPage: React.FC = () => {
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
+    setFormError(null);
     setIsSubmitting(true);
     try {
       await registerUser(values.fullName, values.email, values.password, values.confirmPassword);
       toast.success('Account created successfully! Welcome to SpendWise.');
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Failed to create account';
+      let msg = 'Failed to create account';
+      if (err.response?.data?.errors && typeof err.response.data.errors === 'object') {
+        const firstField = Object.values(err.response.data.errors)[0] as string;
+        msg = firstField || msg;
+      } else if (err.response?.data?.validationErrors && typeof err.response.data.validationErrors === 'object') {
+        const firstField = Object.values(err.response.data.validationErrors)[0] as string;
+        msg = firstField || msg;
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.message) {
+        msg = err.message;
+      }
+      setFormError(msg);
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const onError = (fieldErrors: any) => {
+    const firstKey = Object.keys(fieldErrors)[0];
+    if (firstKey && fieldErrors[firstKey]?.message) {
+      const msg = fieldErrors[firstKey].message;
+      setFormError(msg);
+      toast.error(msg);
+    }
+  };
+
+  const handleFillSample = () => {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    setValue('fullName', 'Alex Rivera', { shouldValidate: true });
+    setValue('email', `alex${randomSuffix}@spendwise.com`, { shouldValidate: true });
+    setValue('password', 'Password@123', { shouldValidate: true });
+    setValue('confirmPassword', 'Password@123', { shouldValidate: true });
+    setValue('terms', true, { shouldValidate: true });
+    setFormError(null);
+    toast('Sample details filled! Click Create Account.', { icon: '✨' });
   };
 
   return (
@@ -85,10 +120,33 @@ export const RegisterPage: React.FC = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-white py-8 px-6 shadow-sm border border-slate-200/80 rounded-2xl sm:px-10">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Quick Sample Autofill Banner */}
+          <div className="mb-6 p-3.5 bg-brand-50/70 border border-brand-200/70 rounded-xl flex items-center justify-between text-xs">
+            <div>
+              <p className="font-semibold text-brand-900">Need quick testing details?</p>
+              <p className="text-brand-700 text-[11px]">Fill valid registration details instantly</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleFillSample}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs shadow-sm transition-colors cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Fill Sample
+            </button>
+          </div>
+
+          {formError && (
+            <div className="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-800 text-xs font-medium flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+              <span>{formError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-4">
             <Input
               label="Full name *"
-              placeholder="e.g. John Doe"
+              placeholder="e.g. Alex Rivera"
               leftIcon={<User className="w-4 h-4" />}
               error={errors.fullName?.message}
               {...register('fullName')}

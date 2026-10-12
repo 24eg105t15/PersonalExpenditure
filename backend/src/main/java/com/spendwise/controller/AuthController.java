@@ -38,6 +38,10 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        if (userPrincipal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Unauthorized: Please sign in"));
+        }
         UserResponse response = authService.getCurrentUser(userPrincipal.getId());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
