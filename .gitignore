@@ -21,3 +21,10 @@ local-mysql-data/
 .env
 .env.local
 .env.*.local
+
+# Report documents
+*.docx
+*.pdf
+*Project_Report*
+PROJECT_REPORT*
+
