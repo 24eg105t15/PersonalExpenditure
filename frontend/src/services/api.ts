@@ -1,11 +1,39 @@
 import axios from 'axios';
 
-export const getApiBaseUrl = () => {
-  const customUrl = typeof window !== 'undefined' ? localStorage.getItem('spendwise_api_url') : null;
+export const getApiBaseUrl = (): string => {
+  // 1. Explicit user override in localStorage
+  if (typeof window !== 'undefined') {
+    const customUrl = localStorage.getItem('spendwise_api_url');
+    if (customUrl && customUrl.trim()) {
+      const clean = customUrl.trim().replace(/\/+$/, '');
+      return (clean.startsWith('http') && !clean.endsWith('/api')) ? `${clean}/api` : clean;
+    }
+  }
+
+  // 2. Build-time environment variable if configured
   const envApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
-  const rawUrl = customUrl || envApiUrl || '/api';
-  const cleanUrl = rawUrl.replace(/\/+$/, '');
-  return (cleanUrl.startsWith('http') && !cleanUrl.endsWith('/api')) ? `${cleanUrl}/api` : cleanUrl;
+  if (envApiUrl && envApiUrl.length > 0 && !envApiUrl.includes('undefined')) {
+    const clean = envApiUrl.replace(/\/+$/, '');
+    return (clean.startsWith('http') && !clean.endsWith('/api')) ? `${clean}/api` : clean;
+  }
+
+  // 3. Dynamic Render hostname resolution:
+  // Automatically mirrors frontend service name to backend service name on Render
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('.onrender.com')) {
+    const host = window.location.hostname;
+    let apiHost = host;
+    if (apiHost.includes('spendwise-web-v2')) {
+      apiHost = apiHost.replace('spendwise-web-v2', 'spendwise-api-v2');
+    } else if (apiHost.includes('spendwise-web')) {
+      apiHost = apiHost.replace('spendwise-web', 'spendwise-api');
+    } else if (apiHost.includes('spendwise-frontend')) {
+      apiHost = apiHost.replace('spendwise-frontend', 'spendwise-backend');
+    }
+    return `https://${apiHost}/api`;
+  }
+
+  // 4. Default fallback (local development / same-origin proxy)
+  return '/api';
 };
 
 export const api = axios.create({

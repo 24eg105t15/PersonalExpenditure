@@ -7,6 +7,7 @@ import { Wallet, Eye, EyeOff, Lock, Mail, Sparkles } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useAuth } from '../../context/AuthContext';
+import { getApiBaseUrl } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const loginSchema = z.object({
@@ -157,6 +158,31 @@ export const LoginPage: React.FC = () => {
               Sign In
             </Button>
           </form>
+
+          {/* API Server Endpoint Indicator & Quick Config */}
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="truncate max-w-[260px]" title={getApiBaseUrl()}>
+              API: <span className="font-mono text-slate-700">{getApiBaseUrl()}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const current = localStorage.getItem('spendwise_api_url') || getApiBaseUrl();
+                const newUrl = window.prompt('Enter SpendWise Backend API URL (e.g. https://your-backend.onrender.com/api):', current);
+                if (newUrl !== null) {
+                  if (newUrl.trim()) {
+                    localStorage.setItem('spendwise_api_url', newUrl.trim());
+                  } else {
+                    localStorage.removeItem('spendwise_api_url');
+                  }
+                  window.location.reload();
+                }
+              }}
+              className="text-brand-600 hover:text-brand-700 font-medium ml-2 underline"
+            >
+              Change
+            </button>
+          </div>
         </div>
       </div>
     </div>
