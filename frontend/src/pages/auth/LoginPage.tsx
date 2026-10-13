@@ -45,8 +45,15 @@ export const LoginPage: React.FC = () => {
       toast.success('Welcome back!');
       navigate(from, { replace: true });
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Invalid email or password';
-      toast.error(msg);
+      let msg = err.response?.data?.message;
+      if (!msg) {
+        if (!err.response) {
+          msg = 'Connecting to server... On Render free tier, the backend takes ~30s to wake up on first load. Please wait a few moments and try again.';
+        } else {
+          msg = 'Invalid email or password';
+        }
+      }
+      toast.error(msg, { duration: 6000 });
     } finally {
       setIsSubmitting(false);
     }

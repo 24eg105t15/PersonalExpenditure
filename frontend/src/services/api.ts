@@ -1,15 +1,15 @@
 import axios from 'axios';
 
-const envApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
-let apiBaseUrl = '/api';
-
-if (envApiUrl) {
-  const cleanUrl = envApiUrl.replace(/\/+$/, '');
-  apiBaseUrl = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
-}
+export const getApiBaseUrl = () => {
+  const customUrl = typeof window !== 'undefined' ? localStorage.getItem('spendwise_api_url') : null;
+  const envApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  const rawUrl = customUrl || envApiUrl || '/api';
+  const cleanUrl = rawUrl.replace(/\/+$/, '');
+  return (cleanUrl.startsWith('http') && !cleanUrl.endsWith('/api')) ? `${cleanUrl}/api` : cleanUrl;
+};
 
 export const api = axios.create({
-  baseURL: apiBaseUrl,
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,6 +17,7 @@ export const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    config.baseURL = getApiBaseUrl();
     const token = localStorage.getItem('spendwise_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

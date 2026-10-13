@@ -3,7 +3,7 @@ services:
   # 1. Spring Boot Backend Web Service (Java 21)
   # ============================================================================
   - type: web
-    name: spendwise-backend
+    name: spendwise-api-v2
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
@@ -26,18 +26,20 @@ services:
   # 2. React Vite Frontend Static Site
   # ============================================================================
   - type: web
-    name: spendwise-frontend
+    name: spendwise-web-v2
     runtime: static
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && if [ -n "$API_HOST" ]; then export VITE_API_URL="https://${API_HOST}/api"; fi && npm run build
     staticPublishPath: dist
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
     envVars:
-      - key: VITE_API_URL
+      - key: API_HOST
         fromService:
           type: web
-          name: spendwise-backend
+          name: spendwise-api-v2
           property: host
+      - key: VITE_API_URL
+        value: "https://spendwise-api-v2.onrender.com/api"

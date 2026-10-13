@@ -6,100 +6,65 @@ SpendWise is configured for a clean, decoupled deployment on Render:
 
 ---
 
-## 🌟 Quick Overview: 2 Services on Render
+## ⚡ Option 1: 1-Click Render Blueprint (Recommended)
 
-```
-               [ User Browser ]
-                      │
-        ┌─────────────┴─────────────┐
-        ▼                           ▼
-[ Render Static Site ]     [ Render Web Service ]
-   (React Frontend)           (Spring Boot Backend)
-https://spendwise-app       https://spendwise-backend
-  .onrender.com               .onrender.com
-        │                           │
-        └─────── REST /api ─────────┘
-                                    │
-                                    ▼
-                          [ Cloud Database ]
-                       (MySQL 8 / TiDB / Aiven)
-```
+The repository includes a ready-to-use `render.yaml` blueprint that creates both frontend and backend automatically:
+
+1. Go to [Render Blueprint Dashboard](https://dashboard.render.com/blueprint/new).
+2. Connect your repository: `24eg105t15/PersonalExpenditure`.
+3. Render will read `render.yaml` and show 2 services:
+   - **`spendwise-api-v2`** (Backend Docker Web Service)
+   - **`spendwise-web-v2`** (Frontend Static Site)
+4. Click **Apply** / **Deploy Blueprint**.
+5. Once deployed:
+   - **Backend API**: `https://spendwise-api-v2.onrender.com`
+   - **Frontend App**: `https://spendwise-web-v2.onrender.com`
 
 ---
 
-## 📦 Service 1: Deploy Backend (Web Service)
+## 🛠️ Option 2: Manual Service Deployment
 
-### Step 1: Create Web Service
-1. In your [Render Dashboard](https://dashboard.render.com), click **New +** → **Web Service**.
-2. Select your repository: `24eg105t15/PersonalExpenditure`.
-3. Configure the following settings:
-   - **Name**: `spendwise-backend`
-   - **Region**: Choose your closest region (e.g., `Oregon`, `Frankfurt`, or `Singapore`)
+If you prefer deploying services individually:
+
+### 📦 1. Backend Web Service
+1. In [Render Dashboard](https://dashboard.render.com), click **New +** → **Web Service**.
+2. Connect `24eg105t15/PersonalExpenditure`.
+3. Settings:
+   - **Name**: `spendwise-api-v2`
+   - **Region**: `Oregon` (or closest to you)
    - **Root Directory**: `backend`
-   - **Runtime**: **Docker** (Render will use `backend/Dockerfile`)
+   - **Runtime**: **Docker**
    - **Instance Type**: **Free**
+4. Environment Variables:
+   - `PORT`: `10000`
+   - `CORS_ALLOWED_ORIGINS`: `*`
+   - `JWT_SECRET`: `404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970`
+   - `SEED_DEMO_DATA`: `true`
+   - `SPRING_PROFILES_ACTIVE`: `demo` *(Instant in-memory MySQL-compatible database)*
+5. Click **Deploy Web Service**.
 
-### Step 2: Environment Variables
-Scroll to **Environment Variables** and add:
-
-| Key | Value | Notes |
-| :--- | :--- | :--- |
-| `PORT` | `10000` | Render default port |
-| `CORS_ALLOWED_ORIGINS` | `*` | Or your frontend Render URL |
-| `JWT_SECRET` | `404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970` | Secret key for JWT |
-| `SEED_DEMO_DATA` | `true` | Seeds categories and demo user |
-
-#### Database Configuration:
-- **Option A (TiDB Cloud Serverless or Aiven MySQL)**:
-  - `SPRING_DATASOURCE_URL`: `jdbc:mysql://<HOST>:<PORT>/<DB_NAME>?useSSL=true&serverTimezone=UTC`
-  - `SPRING_DATASOURCE_USERNAME`: `<DB_USER>`
-  - `SPRING_DATASOURCE_PASSWORD`: `<DB_PASSWORD>`
-- **Option B (Instant Zero-Config In-Memory Database)**:
-  - If you don't have cloud MySQL ready yet, simply add:
-  - `SPRING_PROFILES_ACTIVE`: `demo`
-  *(Spring Boot will instantly start with in-memory H2 in MySQL compatibility mode!)*
-
-### Step 3: Deploy Backend
-Click **Create Web Service**. Wait ~2-3 minutes for the build to finish.
-Once **Live**, copy your Backend URL (e.g. `https://spendwise-backend.onrender.com`).
-
----
-
-## 🌐 Service 2: Deploy Frontend (Static Site)
-
-### Step 1: Create Static Site
-1. In the [Render Dashboard](https://dashboard.render.com), click **New +** → **Static Site**.
-2. Select your repository: `24eg105t15/PersonalExpenditure`.
-3. Configure the following settings:
-   - **Name**: `spendwise-frontend`
+### 🌐 2. Frontend Static Site
+1. In [Render Dashboard](https://dashboard.render.com), click **New +** → **Static Site**.
+2. Connect `24eg105t15/PersonalExpenditure`.
+3. Settings:
+   - **Name**: `spendwise-web-v2`
    - **Branch**: `main`
    - **Root Directory**: `frontend`
    - **Build Command**: `npm install && npm run build`
    - **Publish Directory**: `dist`
-
-### Step 2: Configure SPA Routing (Crucial for React Router)
-Scroll down to **Redirects / Rewrites** and click **Add Rule**:
-- **Source**: `/*`
-- **Destination**: `/index.html`
-- **Action**: **Rewrite**
-
-*(This ensures that refreshing `/dashboard`, `/transactions`, etc. does not result in a 404).*
-
-### Step 3: Add Backend URL Environment Variable
-Under **Environment Variables**, add:
-
-| Key | Value |
-| :--- | :--- |
-| `VITE_API_URL` | `https://spendwise-backend.onrender.com/api` *(replace with your actual backend URL)* |
-
-### Step 4: Deploy Frontend
-Click **Create Static Site**. It will build in ~45 seconds and provide a live URL (e.g. `https://spendwise-frontend.onrender.com`).
+4. Under **Redirects / Rewrites**, add rule:
+   - **Source**: `/*`
+   - **Destination**: `/index.html`
+   - **Action**: **Rewrite**
+5. Under **Environment Variables**, add:
+   - `VITE_API_URL`: `https://spendwise-api-v2.onrender.com/api` *(or your actual backend URL + `/api`)*
+6. Click **Deploy Static Site**.
 
 ---
 
-## 🎯 Verification & Login
-Open your frontend URL:
-- Use the **"Fill Demo"** button on the sign-in page to log in as:
+## 🎯 Verification & Demo Credentials
+Once live, open your Frontend URL:
+- Click **"Fill Demo"** on the Login page:
   - **Email**: `demo@spendwise.com`
   - **Password**: `Demo@123`
-- Or use the **"Fill Sample"** button on the registration page to register a brand new user!
+- *Note*: On Render's Free Tier, inactive backend services go to sleep. The very first request after sleep may take ~30 seconds to respond as the container spins up.
