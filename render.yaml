@@ -1,12 +1,12 @@
 services:
   # ============================================================================
-  # 1. Spring Boot Backend Web Service
+  # 1. Spring Boot Backend Web Service (Java 21)
   # ============================================================================
   - type: web
     name: spendwise-backend
     runtime: docker
-    dockerfilePath: Dockerfile
-    dockerContext: backend
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     plan: free
     region: oregon
     healthCheckPath: /actuator/health
@@ -19,16 +19,8 @@ services:
         value: "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
       - key: SEED_DEMO_DATA
         value: "true"
-      # If using external cloud MySQL (e.g. TiDB Serverless or Aiven), populate these:
-      - key: SPRING_DATASOURCE_URL
-        sync: false
-      - key: SPRING_DATASOURCE_USERNAME
-        sync: false
-      - key: SPRING_DATASOURCE_PASSWORD
-        sync: false
-      # If deploying without external MySQL initially, uncomment demo profile for in-memory H2:
-      # - key: SPRING_PROFILES_ACTIVE
-      #   value: "demo"
+      - key: SPRING_PROFILES_ACTIVE
+        value: "demo"
 
   # ============================================================================
   # 2. React Vite Frontend Static Site

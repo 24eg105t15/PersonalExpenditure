@@ -1,47 +1,32 @@
 # ==============================================================================
-# Stage 1: Build React Frontend
+# Dedicated Java 21 Backend Dockerfile (Optimized for Render 512MB Free Tier)
 # ==============================================================================
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app/frontend
+FROM maven:3.9.8-eclipse-temurin-21-alpine AS builder
+WORKDIR /app
 
-COPY frontend/package*.json ./
-RUN npm ci
-
-COPY frontend/ ./
-RUN npm run build
-
-# ==============================================================================
-# Stage 2: Build Spring Boot Backend with Static Assets
-# ==============================================================================
-FROM maven:3.9.8-eclipse-temurin-21-alpine AS backend-builder
-WORKDIR /app/backend
+# Restrict Maven heap during build to stay safely within Render's 512MB RAM limit
+ENV MAVEN_OPTS="-Xmx384m -XX:+UseG1GC"
 
 COPY backend/pom.xml ./
-# Cache Maven dependencies
 RUN mvn dependency:go-offline -B || true
 
 COPY backend/src ./src
-# Embed built React frontend into Spring Boot's static classpath folder
-COPY --from=frontend-builder /app/frontend/dist ./src/main/resources/static
-
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -Dmaven.test.skip=true
 
 # ==============================================================================
-# Stage 3: Lightweight Production JRE Runtime
+# Lightweight Alpine JRE Runtime
 # ==============================================================================
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Run as dedicated unprivileged user for security
+# Run as non-root user
 RUN addgroup -S spendwise && adduser -S spendwise -G spendwise
 USER spendwise
 
-COPY --from=backend-builder /app/backend/target/spendwise-backend-1.0.0.jar app.jar
+COPY --from=builder /app/target/spendwise-backend-1.0.0.jar app.jar
 
 ENV PORT=8085
+ENV JAVA_OPTS="-Xmx350m -Xms128m -XX:+UseG1GC -Djava.security.egd=file:/dev/./urandom"
 EXPOSE 8085
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:${PORT}/actuator/health || exit 1
-
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --server.port=${PORT:-8085}"]
